@@ -10,7 +10,7 @@ from glob import glob
 import numpy as np
 import pdb
 
-""" The data extractor is based on timestamp categories.i.e. fileds that shared the same time stamp are extracted into same dictionary"""
+""" The data extractor is based on timestamp categories.i.e. fileds that shared the same timestamp are extracted into same dictionary"""
 
 data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 'data': None},
 	 {'label': 'brk_press', 'pid': '224', 'fields':['timestamp','pbrk'], 'data': None},

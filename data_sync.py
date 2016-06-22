@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import os
 from glob import glob
 import numpy as np
+from os.path import expanduser
 
 # The extractor(folder_name) function is in 'home/olabiyi'. Please set sys.path before using this function or script if passing pickle file argument.
-
-sys.path.append('/home/oolabiyi')
-from preprocessing.data_extractor import extractor
+ 
+sys.path.append(expanduser("~"))
+from data_labeling_tool.data_extractor import extractor
 
 def sync(file_name):
 	file_name = os.path.abspath(file_name)

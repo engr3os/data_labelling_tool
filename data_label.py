@@ -13,12 +13,13 @@ from glob import glob
 import numpy as np
 import pdb
 import atexit
+from os.path import expanduser
 
 """ This script read in the pickle file and display images and make plots 
 """
 
-sys.path.append('/home/oolabiyi')
-from preprocessing.data_sync import sync
+sys.path.append(expanduser("~"))
+from data_labeling_tool.data_sync import sync
 
 def onClick(event):
     global pause
