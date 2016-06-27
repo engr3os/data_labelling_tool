@@ -36,8 +36,9 @@ def sync(file_name):
 	index = frames[-1].index
 	frames_sync = [frame.reindex(index=index, method='ffill') for frame in frames]
 	data = pd.concat(frames_sync, axis=1)
-	data.dropna(axis=1,how='all',inplace=True)
-	return  data[data.columns[(data > 0).any()]]
+	#data.dropna(axis=1,how='all',inplace=True)
+	data = pd.concat([data[data.columns[(data >  0).any()]], data[data.columns[(data <  0).all()]]], axis =1)
+	return  data
 
 
 if __name__ == "__main__":
@@ -45,7 +46,7 @@ if __name__ == "__main__":
 	file_name = args[0]
 	data_out = sync(file_name)
 	print "Saving extracted synced data to csv file"
-	pickle.dump(data_out, open(os.path.split(os.getcwd())[1]+'_extr_synced.pkl','wb'))
+	#pickle.dump(data_out, open(os.path.split(os.getcwd())[1]+'_extr_synced.pkl','wb'))
 	data_out.index =  data_out.index.astype(np.int64)//10**3
 	data_out.index.name = 'timestamp'
 	data_out.to_csv(os.path.split(os.getcwd())[1]+'_extr_synced.csv')

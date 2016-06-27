@@ -80,13 +80,15 @@ if __name__ == "__main__":
 	if len(args) > 1: 
 		labels = args[1:]
 	else:
-		labels = input("Please enter your labels, space separated with quote: ")
+		labels = raw_input("Please enter your labels, space separated: ")
 		labels = labels.split()
 		
+plot_labels = ['ssa', 'pbrk', 'hv_accp', 'sp1', 'b_p', 'yr', 'latitude', 'longitude', 'id', 'age', 'object_class', 'sizeY', 'throttle_position','leftlane_valid', 'leftlane_confidence', 'leftlane_boundarytype', 'rightlane_valid', 'rightlane_confidence','rightlane_boundarytype', 'face_cam', 'hand_cam', 'outside_cam']
+img_labels = ['face_cam', 'hand_cam', 'outside_cam']
 attr = []
 attr_count = []
 for num, label in enumerate(labels):
-	attr.append(input("Please enter attributes for label "+label+" (still space separated): ").split())
+	attr.append(raw_input("Please enter attributes for label "+label+" (still space separated): ").split())
 	attr_count.append(len(attr[num]))
 num_class = max(attr_count)
 
@@ -95,7 +97,7 @@ if os.path.isfile(file_name):
 	print "Processing", os.path.split(file_name)[1]
 	try:
 		data = pd.read_csv(f)
-		data['timestamp'] = pd.to_datetime(data['timestamp'])
+		data['timestamp'] = pd.to_datetime(data['timestamp'], unit='us')
 		data.set_index('timestamp', drop=True, inplace=True)
 	except:
 		with open(file_name, 'rb') as f:
@@ -106,15 +108,22 @@ elif os.path.isfile(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.csv'
 	print "Processing", os.path.split(file_name)[1]
 	data = pd.read_csv(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.csv')
 	data['timestamp'] = data['timestamp'].convert_objects(convert_numeric=True)
-	data['timestamp'] = pd.to_datetime(data['timestamp'])
+	data['timestamp'] = pd.to_datetime(data['timestamp'], unit='us')
 	data.set_index('timestamp', drop=True, inplace=True)
+	os.chdir(file_name)
 elif os.path.isfile(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.csv'):
 	print "Found an existing extracted pickle file"
 	print "Processing", os.path.split(file_name)[1]
 	with open(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.pkl', 'rb') as f:
 		data = pickle.load(f)
+	os.chdir(file_name)
 else:
 	data = sync(file_name)
+	os.chdir(file_name)
+	
+for item in plot_labels:
+	if not item in data.columns:
+		data[item] = 0 
 	
 data_label = pd.DataFrame(columns=labels, index=data.index)
 labels.insert(0, "NA")
@@ -127,8 +136,8 @@ delta = 0
 DELTA_MIN = 0
 start_time = data_label.index[0]
 stop_time = data_label.index[0]
-img_files = data.iloc[0,-3:]
-rot_index = list(data.keys()[-3:]).index('face_cam_image')
+img_files = data.loc[data.index[0],img_labels]
+rot_index = list(img_files.keys()).index('face_cam')
 min_shape = Image.open(img_files[-1]).size
 plt_fig = plt.figure()
 # Texts
@@ -163,14 +172,16 @@ ax3.set_xlim(0, data.shape[0]-1)
 ax3.set_ylabel('Speed')
 ## Yaw rate
 ax5 = plt.subplot2grid((3,3), (2,0))
-plt_line3, = ax5.plot([], [], 'k')
-ax5.set_ylim(min(data['yr'].min(), 0), data['yr'].max())
+plt_line3, = ax5.plot([], [], 'k', label='Yaw Rate')
+plt_line6, = ax5.plot([], [], 'r', label='Brake Press')
+ax5.set_ylim(min(data[['yr', 'pbrk']].min().min(), 0), data[['yr', 'pbrk']].max().max())
 ax5.set_xlim(0, data.shape[0]-1)
-ax5.set_ylabel('Yaw Rate')
+ax5.set_ylabel('Yaw Rate & Break Press')
+plt.legend(handles=[plt_line3, plt_line6])
 ## Throttle Position
 ax6 = plt.subplot2grid((3,3), (2,1))
-plt_line4, = ax6.plot([], [], 'r', label='from OBD(norm)')
-plt_line5, = ax6.plot([], [], 'b', label='from CAN(norm)')
+plt_line4, = ax6.plot([], [], 'r', label='Throttle (OBD)')
+plt_line5, = ax6.plot([], [], 'b', label='Throttle (CAN)')
 plt_line2, = ax6.plot([], [], 'g', label= 'Parking')
 throt_diff = data['throttle_position'].max()-data['throttle_position'].min()
 throt_min = data['throttle_position'].min()
@@ -178,14 +189,15 @@ accel_diff = data['hv_accp'].max()-data['hv_accp'].min()
 accel_min = data['hv_accp'].min()
 ax6.set_ylim(0, 1.0)
 ax6.set_xlim(0, data.shape[0]-1)
-ax6.set_ylabel('Throttle Position')
+ax6.set_ylabel('Throttle and parking Position')
 plt.legend(handles=[plt_line4, plt_line5, plt_line2])
-## Brake Pressure
+## Log and lat
 ax7 = plt.subplot2grid((3,3), (2,2))
-plt_line6, = ax7.plot([], [], 'r')
-ax7.set_ylim(min(data['pbrk'].min(), 0), data['pbrk'].max())
-ax7.set_xlim(0, data.shape[0]-1)
-ax7.set_ylabel('Brake Pressure')
+plt_line7, = ax7.plot([], [], 'r')
+ax7.set_ylim(data['latitude'].min(), data['latitude'].max())
+ax7.set_xlim(data['longitude'].min(), data['longitude'].max())
+ax7.set_ylabel('Latitude')
+ax7.set_xlabel('Longitude')
 ax8 = plt.axes([0.47+0.2, 0.86, 0.05, 0.04])
 spbutton = Button(ax8, 'FFW >>', color='lightblue', hovercolor='0.975')
 spbutton.on_clicked(sp_onClick) 
@@ -231,7 +243,7 @@ def updatefig(itergen):
 	if int(drange.val) != 0:
 		start.set_val(data_label.index[i].value//10**3-int(drange.val)*10**6)
 	global img_files
-	img_files = data.iloc[i, -3:]
+	img_files = data.loc[data.index[i],img_labels]
 	plt.suptitle('Processing '+str((data.index[i].value)//10**3)+' timestamp, remaining '+str(data.index[-1]-data.index[i]).split()[-1]+'/'+str(data.index[-1]-data.index[0]).split()[-1]+' to complete trip', fontsize=14)
 	plt_image.set_array(combine_imgs(img_files))
 	plt_line.set_data(range(i), data.loc[data.index[:i], 'ssa'].values)
@@ -241,6 +253,7 @@ def updatefig(itergen):
 	plt_line4.set_data(range(i), (data.loc[data.index[:i], 'throttle_position'].values-throt_min)/throt_diff)
 	plt_line5.set_data(range(i), (data.loc[data.index[:i], 'hv_accp'].values-accel_min)/accel_diff)
 	plt_line6.set_data(range(i), data.loc[data.index[:i], 'pbrk'].values)
+	plt_line7.set_data(data.loc[data.index[:i], 'longitude'].values, data.loc[data.index[:i], 'latitude'].values)
 	text.set_text('Detected object: '+str(data.loc[data.index[i], 'object_class'])+'\n'+
 	'Object id: '+str(data.loc[data.index[i], 'id'])+'\n'+
 	'Object size: '+str(data.loc[data.index[i], 'sizeY'])+'\n'+
@@ -255,7 +268,7 @@ def updatefig(itergen):
 	'Label timedelta: '+str(pd.to_timedelta(stop.val-start.val, unit='us')).split()[-1]+'\n'
 	) 
 		
-	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, text, start, stop, data_label 
+	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, plt_line5, plt_line6, plt_line7,text, start, stop, data_label 
 
 #plt_fig.canvas.mpl_connect('button_press_event', onClick)
 plt_ani = an.FuncAnimation(plt_fig, updatefig, itergen, interval = 10, blit=False, repeat=False)

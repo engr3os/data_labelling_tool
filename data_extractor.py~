@@ -50,7 +50,7 @@ def extractor(folder_name):
 
 	img_folders = [f for f in filelist if (len(f.split('.'))==1 and f.split('_')[1] in ['cam'])]
 
-	print "Parsing JSON files ..."
+	#print "Parsing JSON files ..."
 	json_text = []
 	for file_name in json_files:
 		with open(file_name, 'r') as f:
@@ -89,7 +89,7 @@ def extractor(folder_name):
 		texts = texts.loc[:,gps_data['fields']]
 		#texts['timestamp'].apply(lambda x: int(x*1e6))
 		texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='s')
-		texts['gps_timestamp'] = pd.to_datetime(texts['gps_timestamp'], unit='s')
+		#texts['gps_timestamp'] = pd.to_datetime(texts['gps_timestamp'], unit='s')
 		texts.set_index('timestamp', drop=True, inplace=True)
 		texts['speed'].columns = 'gps_speed'
 		gps_data.update({'data': texts})
@@ -111,11 +111,11 @@ def extractor(folder_name):
 	for folds in img_folders:
 		try:
 			img_files = glob(os.getcwd()+'/'+folds+'/*')
-			texts = pd.DataFrame({folds+'_image': img_files})
-			texts['timestamp'] = texts[folds+'_image'].apply(lambda x:x.split('/')[-1].split('.')[0])
+			texts = pd.DataFrame({folds: img_files})
+			texts['timestamp'] = texts[folds].apply(lambda x:x.split('/')[-1].split('.')[0])
 			texts['timestamp'] = texts['timestamp'].convert_objects(convert_numeric=True)
 			texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us') 
-			texts = texts[['timestamp',folds+'_image']]
+			texts = texts[['timestamp',folds]]
 			texts = texts.sort('timestamp')
 			texts.set_index('timestamp', drop=True, inplace=True)
 			data.append({'label': folds, 'pid': folds, 'fields': texts.keys(), 'data':texts})
