@@ -39,7 +39,7 @@ def r_label(label):
 		label_index = labels.index(label)
 	except ValueError:
 		pass
-	[label.set_text(attr[label_index][num]) if num < len(attr[label_index]) else label.set_text('NA') for num,label in enumerate(radio1.labels)]
+	[label.set_text(attr[label_index][num-1]) if (num > 0 and num < len(attr[label_index])+1) else label.set_text('NA') for num,label in enumerate(radio1.labels)]
 	return cid
 def r1_label(label):
 	global clabel
@@ -47,7 +47,7 @@ def r1_label(label):
 	return clabel
 def log_label(event):
 	print 'clabel: ', clabel, 'cid: ', cid
-	if cid != 'NA':
+	if cid != 'NA' and clabel != 'NA':
 		global data_label
 		start_time = start.val
 		stop_time = stop.val
@@ -85,6 +85,7 @@ if __name__ == "__main__":
 		
 plot_labels = ['ssa', 'pbrk', 'hv_accp', 'sp1', 'b_p', 'yr', 'latitude', 'longitude', 'id', 'age', 'object_class', 'sizeY', 'throttle_position','leftlane_valid', 'leftlane_confidence', 'leftlane_boundarytype', 'rightlane_valid', 'rightlane_confidence','rightlane_boundarytype', 'face_cam', 'hand_cam', 'outside_cam']
 img_labels = ['face_cam', 'hand_cam', 'outside_cam']
+
 attr = []
 attr_count = []
 for num, label in enumerate(labels):
@@ -127,7 +128,7 @@ for item in plot_labels:
 	
 data_label = pd.DataFrame(columns=labels, index=data.index)
 labels.insert(0, "NA")
-attr.insert(0,["NA"]*num_class)
+attr.insert(0,["NA"]*(num_class+1))
 pause = False
 log = False
 cid = labels[0]
@@ -208,7 +209,7 @@ ax10 = plt.axes([0.47+0.2, 0.76, 0.05, 0.04])
 readybutton = Button(ax10, 'Set label \nstart time', color='yellow', hovercolor='0.975')
 readybutton.on_clicked(set_label_start)
 ax11 = plt.axes([0.47+0.2, 0.71, 0.05, 0.04])
-logbutton = Button(ax11, 'Log label', color='green', hovercolor='0.975')
+logbutton = Button(ax11, 'Stop time \nLog label', color='green', hovercolor='0.975')
 logbutton.on_clicked(log_label)
 ax12 = plt.axes([0.87, 0.81, 0.05, 0.09])
 savebutton = Button(ax12, 'Save labels\nto file', color='cyan', hovercolor='0.975')
@@ -226,7 +227,7 @@ rax = plt.axes([0.53+0.2, 0.71, 0.06, 0.19])
 radio = RadioButtons(rax, labels, active=0)
 #radio = CheckButtons(rax, labels[1:], [False]*len(labels[1:]))
 rax1 = plt.axes([0.60+0.2, 0.71, 0.06, 0.19])
-radio1 = RadioButtons(rax1, ['NA']*num_class, active=0)
+radio1 = RadioButtons(rax1, ['NA']*(num_class+1), active=0)
 #radio1 = CheckButtons(rax1, range(num_class), [False]*num_class)
 radio.on_clicked(r_label)
 radio1.on_clicked(r1_label)

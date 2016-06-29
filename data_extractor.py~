@@ -21,7 +21,7 @@ can_data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 
 	]
 gps_data = {'label': 'gps_log', 'pid': 'gps', 'fields': ['timestamp', 'gps_timestamp', 'latitude', 'longitude', 'elevation', 'speed','climb_speed'], 'data': None}
 
-files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv']
+files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv', 'hand_frames_0', 'hand_frames_1', 'hand_frames_2']
 
 
 def extractor(folder_name):
@@ -48,7 +48,7 @@ def extractor(folder_name):
 
 	csv_files = [f for f in filelist if (len(f.split('.'))>1 and f.split('.')[1] in ['csv'])]
 
-	img_folders = [f for f in filelist if (len(f.split('.'))==1 and f.split('_')[1] in ['cam'])]
+	img_folders = [f for f in filelist if (len(f.split('.'))==1 and f.split('_')[1] in ['cam', 'frames'])]
 
 	#print "Parsing JSON files ..."
 	json_text = []
