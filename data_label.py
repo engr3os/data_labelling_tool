@@ -67,9 +67,7 @@ def set_label_start(event):
 		start.set_val(stop.val)
 
 def combine_imgs(img_files):
-	imgs = [Image.open(img_file) if type(img_file) in [str] else Image.open(img_files[-1]) for img_file in list(img_files) ]
-	if rot_index < len(imgs):
-		imgs[rot_index] = imgs[rot_index].rotate(180)
+	imgs = [Image.open(img_file).rotate(180) if (type(img_file) in [str] and ind==rot_index)  else Image.open(img_file) if (type(img_file) in [str] and ind!=rot_index) else Image.open(img_files[valid_ind]) for ind, img_file in enumerate(list(img_files)) ]
 	#min_shape = sorted( [(np.sum(i.size), i.size ) for i in imgs if np.sum(i.size)>0])[0][1]
 	imgs_comb = np.hstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
 	return Image.fromarray(imgs_comb)
@@ -139,7 +137,9 @@ start_time = data_label.index[0]
 stop_time = data_label.index[0]
 img_files = data.loc[data.index[0],img_labels]
 rot_index = list(img_files.keys()).index('face_cam')
-min_shape = Image.open(img_files[-1]).size
+valid_imgs = [(ind, img) for ind, img in enumerate(list(img_files))]
+valid_ind = valid_imgs[0][0]
+min_shape = Image.open(valid_imgs[0][1]).size
 plt_fig = plt.figure()
 # Texts
 ax = plt.subplot2grid((3,3), (1,2))
