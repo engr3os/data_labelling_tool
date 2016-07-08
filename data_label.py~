@@ -65,6 +65,14 @@ def set_label_start(event):
 	global start
 	if int(drange.val) == 0:
 		start.set_val(stop.val)
+def press(event):
+	global delta, press_delta
+	#print('press', event.key)
+	delta = 0
+	if event.key == 'right':
+		press_delta = 1
+	if event.key == 'left':
+		press_delta = -1
 
 def combine_imgs(img_files):
 	imgs = [Image.open(img_file).rotate(180) if (type(img_file) in [str] and ind==rot_index)  else Image.open(img_file) if (type(img_file) in [str] and ind!=rot_index) else Image.open(img_files[valid_ind]) for ind, img_file in enumerate(list(img_files)) ]
@@ -122,9 +130,15 @@ else:
 	
 for item in plot_labels:
 	if not item in data.columns:
-		data[item] = 0 
-	
-data_label = pd.DataFrame(columns=labels, index=data.index)
+		data[item] = 0
+
+for item in img_labels:
+	if not item in data.columns:
+		img_labels.remove(item)
+		
+img_tstamp = [label+"_timestamp" for label in img_labels]
+data_label = pd.DataFrame(columns=img_tstamp+labels, index=data.index)
+data_label[img_tstamp[:len(img_labels)]] = data[img_labels].applymap(lambda x: x.split('/')[-1].split('.')[0])	
 labels.insert(0, "NA")
 attr.insert(0,["NA"]*(num_class+1))
 pause = False
@@ -132,6 +146,7 @@ log = False
 cid = labels[0]
 clabel = attr[0][0]
 delta = 0
+press_delta = 0
 DELTA_MIN = 0
 start_time = data_label.index[0]
 stop_time = data_label.index[0]
@@ -232,11 +247,14 @@ radio1 = RadioButtons(rax1, ['NA']*(num_class+1), active=0)
 radio.on_clicked(r_label)
 radio1.on_clicked(r1_label)
 def itergen():
+	global press_delta
 	i_max = data.shape[0]
 	i = 0
 	while i+delta < i_max:
 		if not pause:
 			i+=delta
+		i+= press_delta
+		press_delta = 0
 		yield i
 def updatefig(itergen):
 	i = itergen
@@ -270,7 +288,7 @@ def updatefig(itergen):
 	) 
 		
 	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, plt_line5, plt_line6, plt_line7,text, start, stop, data_label 
-
+plt_fig.canvas.mpl_connect('key_press_event', press)
 #plt_fig.canvas.mpl_connect('button_press_event', onClick)
 plt_ani = an.FuncAnimation(plt_fig, updatefig, itergen, interval = 10, blit=False, repeat=False)
 plt.show()
