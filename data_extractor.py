@@ -75,7 +75,7 @@ def extractor(folder_name):
 			texts = pd.DataFrame.from_dict(texts)
 			try:
 				texts = texts.loc[:,can_data[i]['fields']]
-				texts['timestamp'] = texts['timestamp'].convert_objects(convert_numeric=True)
+				texts['timestamp'] = pd.to_numeric(texts['timestamp'])
 				texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us')
 				texts.set_index('timestamp', drop=True, inplace=True)
 				can_data[i].update({'data': texts})
@@ -113,10 +113,10 @@ def extractor(folder_name):
 			img_files = glob(os.getcwd()+'/'+folds+'/*')
 			texts = pd.DataFrame({folds: img_files})
 			texts['timestamp'] = texts[folds].apply(lambda x:x.split('/')[-1].split('.')[0])
-			texts['timestamp'] = texts['timestamp'].convert_objects(convert_numeric=True)
+			texts['timestamp'] = pd.to_numeric(texts['timestamp'])
 			texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us') 
 			texts = texts[['timestamp',folds]]
-			texts = texts.sort('timestamp')
+			texts.sort_values(by='timestamp', inplace=True)
 			texts.set_index('timestamp', drop=True, inplace=True)
 			data.append({'label': folds, 'pid': folds, 'fields': texts.keys(), 'data':texts})
 		except:

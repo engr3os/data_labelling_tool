@@ -21,7 +21,7 @@ can_data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 
 	]
 gps_data = {'label': 'gps_log', 'pid': 'gps', 'fields': ['timestamp', 'gps_timestamp', 'latitude', 'longitude', 'elevation', 'speed','climb_speed'], 'data': None}
 
-files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv', 'hand_frames_0', 'hand_frames_1', 'hand_frames_2']
+files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv']
 
 
 def extractor(folder_name):
@@ -48,7 +48,7 @@ def extractor(folder_name):
 
 	csv_files = [f for f in filelist if (len(f.split('.'))>1 and f.split('.')[1] in ['csv'])]
 
-	img_folders = [f for f in filelist if (len(f.split('.'))==1 and f.split('_')[1] in ['cam', 'frames'])]
+	img_folders = [f for f in filelist if (len(f.split('.'))==1 and f.split('_')[1] in ['cam'])]
 
 	#print "Parsing JSON files ..."
 	json_text = []
@@ -75,7 +75,7 @@ def extractor(folder_name):
 			texts = pd.DataFrame.from_dict(texts)
 			try:
 				texts = texts.loc[:,can_data[i]['fields']]
-				texts['timestamp'] = texts['timestamp'].convert_objects(convert_numeric=True)
+				texts['timestamp'] = pd.to_numeric(texts['timestamp'])
 				texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us')
 				texts.set_index('timestamp', drop=True, inplace=True)
 				can_data[i].update({'data': texts})
@@ -113,10 +113,10 @@ def extractor(folder_name):
 			img_files = glob(os.getcwd()+'/'+folds+'/*')
 			texts = pd.DataFrame({folds: img_files})
 			texts['timestamp'] = texts[folds].apply(lambda x:x.split('/')[-1].split('.')[0])
-			texts['timestamp'] = texts['timestamp'].convert_objects(convert_numeric=True)
+			texts['timestamp'] = pd.to_numeric(texts['timestamp'])
 			texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us') 
 			texts = texts[['timestamp',folds]]
-			texts = texts.sort('timestamp')
+			texts.sort_values(by='timestamp', inplace=True)
 			texts.set_index('timestamp', drop=True, inplace=True)
 			data.append({'label': folds, 'pid': folds, 'fields': texts.keys(), 'data':texts})
 		except:

@@ -12,7 +12,6 @@ import os
 from glob import glob
 import numpy as np
 import pdb
-import atexit
 from os.path import expanduser
 
 """ This script read in the pickle file and display images and make plots 
@@ -40,6 +39,7 @@ def r_label(label):
 	except ValueError:
 		pass
 	[label.set_text(attr[label_index][num-1]) if (num > 0 and num < len(attr[label_index])+1) else label.set_text('NA') for num,label in enumerate(radio1.labels)]
+	radio1.set_active(0)
 	return cid
 def r1_label(label):
 	global clabel
@@ -68,10 +68,11 @@ def set_label_start(event):
 def press(event):
 	global delta, press_delta
 	#print('press', event.key)
-	delta = 0
 	if event.key == 'right':
+		delta = 0
 		press_delta = 1
 	if event.key == 'left':
+		delta = 0
 		press_delta = -1
 
 def combine_imgs(img_files):
@@ -114,7 +115,7 @@ elif os.path.isfile(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.csv'
 	print "Found an existing extracted csv file"
 	print "Processing", os.path.split(file_name)[1]
 	data = pd.read_csv(file_name+'/'+os.path.split(file_name)[1]+'_extr_synced.csv')
-	data['timestamp'] = data['timestamp'].convert_objects(convert_numeric=True)
+	data['timestamp'] = pd.to_numeric(data['timestamp'])#.convert_objects(convert_numeric=True)
 	data['timestamp'] = pd.to_datetime(data['timestamp'], unit='us')
 	data.set_index('timestamp', drop=True, inplace=True)
 	os.chdir(file_name)
@@ -138,7 +139,7 @@ for item in img_labels:
 		
 img_tstamp = [label+"_timestamp" for label in img_labels]
 data_label = pd.DataFrame(columns=img_tstamp+labels, index=data.index)
-data_label[img_tstamp[:len(img_labels)]] = data[img_labels].applymap(lambda x: x.split('/')[-1].split('.')[0])	
+data_label[img_tstamp] = data[img_labels].applymap(lambda x: str(x).split('/')[-1].split('.')[0])	
 labels.insert(0, "NA")
 attr.insert(0,["NA"]*(num_class+1))
 pause = False
@@ -152,7 +153,7 @@ start_time = data_label.index[0]
 stop_time = data_label.index[0]
 img_files = data.loc[data.index[0],img_labels]
 rot_index = list(img_files.keys()).index('face_cam')
-valid_imgs = [(ind, img) for ind, img in enumerate(list(img_files))]
+valid_imgs = [(ind, img) for ind, img in enumerate(list(img_files)) if str(img) != str(np.nan)]
 valid_ind = valid_imgs[0][0]
 min_shape = Image.open(valid_imgs[0][1]).size
 plt_fig = plt.figure()
@@ -263,7 +264,7 @@ def updatefig(itergen):
 		start.set_val(data_label.index[i].value//10**3-int(drange.val)*10**6)
 	global img_files
 	img_files = data.loc[data.index[i],img_labels]
-	plt.suptitle('Processing '+str((data.index[i].value)//10**3)+' timestamp, remaining '+str(data.index[-1]-data.index[i]).split()[-1]+'/'+str(data.index[-1]-data.index[0]).split()[-1]+' to complete trip', fontsize=14)
+	plt.suptitle('Processing timestamp '+str((data.index[i].value)//10**3)+', remaining '+str(data.index[-1]-data.index[i]).split()[-1]+'/'+str(data.index[-1]-data.index[0]).split()[-1]+' to complete trip', fontsize=14)
 	plt_image.set_array(combine_imgs(img_files))
 	plt_line.set_data(range(i), data.loc[data.index[:i], 'ssa'].values)
 	plt_line1.set_data(range(i), data.loc[data.index[:i], 'sp1'].values)
