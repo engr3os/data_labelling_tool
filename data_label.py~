@@ -136,7 +136,7 @@ for item in plot_labels:
 for item in img_labels:
 	if not item in data.columns:
 		img_labels.remove(item)
-		
+pdb.set_trace()		
 img_tstamp = [label+"_timestamp" for label in img_labels]
 data_label = pd.DataFrame(columns=img_tstamp+labels, index=data.index)
 data_label[img_tstamp] = data[img_labels].applymap(lambda x: str(x).split('/')[-1].split('.')[0])	
