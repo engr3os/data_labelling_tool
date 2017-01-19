@@ -273,6 +273,10 @@ def updatefig(itergen):
 	plt_line4.set_data(range(i), (data.loc[data.index[:i], 'throttle_position'].values-throt_min)/throt_diff)
 	plt_line5.set_data(range(i), (data.loc[data.index[:i], 'hv_accp'].values-accel_min)/accel_diff)
 	plt_line6.set_data(range(i), data.loc[data.index[:i], 'pbrk'].values)
+	ax2.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
+	ax3.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
+	ax5.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
+	ax6.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
 	plt_line7.set_data(data.loc[data.index[:i], 'longitude'].values, data.loc[data.index[:i], 'latitude'].values)
 	text.set_text('Detected object: '+str(data.loc[data.index[i], 'object_class'])+'\n'+
 	'Object id: '+str(data.loc[data.index[i], 'id'])+'\n'+
@@ -288,7 +292,7 @@ def updatefig(itergen):
 	'Label timedelta: '+str(pd.to_timedelta(stop.val-start.val, unit='us')).split()[-1]+'\n'
 	) 
 		
-	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, plt_line5, plt_line6, plt_line7,text, start, stop, data_label 
+	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, plt_line5, plt_line6, plt_line7,text, start, stop, data_label, ax2, ax3, ax5, ax6 
 plt_fig.canvas.mpl_connect('key_press_event', press)
 #plt_fig.canvas.mpl_connect('button_press_event', onClick)
 plt_ani = an.FuncAnimation(plt_fig, updatefig, itergen, interval = 10, blit=False, repeat=False)

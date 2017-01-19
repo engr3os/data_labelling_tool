@@ -9,6 +9,7 @@ import os
 from glob import glob
 import numpy as np
 from os.path import expanduser
+import pdb
 
 # The extractor(folder_name) function is in 'home/olabiyi'. Please set sys.path before using this function or script if passing pickle file argument.
  
@@ -36,8 +37,11 @@ def sync(file_name):
 	index = frames[-1].index
 	frames_sync = [frame.reindex(index=index, method='ffill') for frame in frames]
 	data = pd.concat(frames_sync, axis=1)
-	#data.dropna(axis=1,how='all',inplace=True)
-	data = pd.concat([data[data.columns[(data >  0).any()]], data[data.columns[(data <  0).all()]]], axis =1)
+	#data.dropna(axis=1,how='all',inplace=True
+	if (data['longitude'] < 0).mean() < 0.99:
+		data = pd.concat([data[data.columns[(data >  0).any()]], data['longitude']], axis =1)
+	else:	
+		data = pd.concat([data[data.columns[(data >  0).any()]], data[data.columns[(data <  0).all()]]], axis =1)
 	return  data
 
 

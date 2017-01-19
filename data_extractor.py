@@ -17,7 +17,11 @@ can_data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 
 	 {'label': 'accel_ped', 'pid': '245', 'fields':['timestamp','hv_accp'], 'data': None},
 	{'label': 'speed', 'pid': '0B4', 'fields': ['timestamp','sp1'], 'data': None},
 	{'label': 'parking', 'pid': '3BC', 'fields': ['timestamp','b_p'], 'data': None},
-	{'label': 'yaw_rate', 'pid': '024', 'fields': ['timestamp','yr'], 'data': None}
+	{'label': 'yaw_rate', 'pid': '024', 'fields': ['timestamp','yr'], 'data': None},
+	{'label': 'road_slope', 'pid': '320', 'fields': ['timestamp','aslp'], 'data': None},
+	{'label': 'brk_state', 'pid': '3BB', 'fields': ['timestamp','b_stpe'], 'data': None},
+	{'label': 'gear_pos', 'pid': '6C0', 'fields': ['timestamp','psw_pmn'], 'data': None},
+	{'label': 'odo', 'pid': '611', 'fields': ['timestamp','odo'], 'data': None}
 	]
 gps_data = {'label': 'gps_log', 'pid': 'gps', 'fields': ['timestamp', 'gps_timestamp', 'latitude', 'longitude', 'elevation', 'speed','climb_speed'], 'data': None}
 
@@ -112,19 +116,19 @@ def extractor(folder_name):
 		except:
 			pass
 	print "Processing image folders ..."
-
 	for folds in img_folders:
 		try:
 			img_files = glob(os.getcwd()+'/'+folds+'/*')
 			texts = pd.DataFrame({folds: img_files})
 			texts['timestamp'] = texts[folds].apply(lambda x:x.split('/')[-1].split('.')[0])
-			texts['timestamp'] = pd.to_numeric(texts['timestamp'])
+			#texts['timestamp'] = pd.to_numeric(texts['timestamp'])
 			texts['timestamp'] = pd.to_datetime(texts['timestamp'], unit='us') 
 			texts = texts[['timestamp',folds]]
 			texts.sort_values(by='timestamp', inplace=True)
 			texts.set_index('timestamp', drop=True, inplace=True)
 			data.append({'label': folds, 'pid': folds, 'fields': texts.keys(), 'data':texts})
 		except:
+			pdb.set_trace()
 			pass
 	data = [item for item in data if item['data'] is not None]
 	#print [item['data'].shape for item in data] 
@@ -134,6 +138,7 @@ if __name__ == "__main__":
 	args = sys.argv[1:]
 	folder_name = args[0]
 	data_out = extractor(folder_name)
+	#pdb.set_trace()
 	print "Saving extracted data to pickle file ..."
 	pickle.dump(data_out, open(os.path.split(os.getcwd())[1]+'_extr.pkl','wb'))
 	
