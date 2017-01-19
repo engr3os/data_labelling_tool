@@ -129,7 +129,7 @@ def extractor(folder_name):
 			texts.set_index('timestamp', drop=True, inplace=True)
 			data.append({'label': folds, 'pid': folds, 'fields': texts.keys(), 'data':texts})
 		except:
-			pdb.set_trace()
+			#pdb.set_trace()
 			pass
 	data = [item for item in data if item['data'] is not None]
 	#print [item['data'].shape for item in data] 
