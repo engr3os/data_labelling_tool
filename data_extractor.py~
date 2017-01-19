@@ -11,24 +11,25 @@ import numpy as np
 import pdb
 
 """ The data extractor is based on timestamp categories.i.e. fileds that shared the same timestamp are extracted into same dictionary"""
-data = []
-can_data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 'data': None},
-	 {'label': 'brk_press', 'pid': '224', 'fields':['timestamp','pbrk'], 'data': None},
-	 {'label': 'accel_ped', 'pid': '245', 'fields':['timestamp','hv_accp'], 'data': None},
-	{'label': 'speed', 'pid': '0B4', 'fields': ['timestamp','sp1'], 'data': None},
-	{'label': 'parking', 'pid': '3BC', 'fields': ['timestamp','b_p'], 'data': None},
-	{'label': 'yaw_rate', 'pid': '024', 'fields': ['timestamp','yr'], 'data': None},
-	{'label': 'road_slope', 'pid': '320', 'fields': ['timestamp','aslp'], 'data': None},
-	{'label': 'brk_state', 'pid': '3BB', 'fields': ['timestamp','b_stpe'], 'data': None},
-	{'label': 'gear_pos', 'pid': '6C0', 'fields': ['timestamp','psw_pmn'], 'data': None},
-	{'label': 'odo', 'pid': '611', 'fields': ['timestamp','odo'], 'data': None}
-	]
-gps_data = {'label': 'gps_log', 'pid': 'gps', 'fields': ['timestamp', 'gps_timestamp', 'latitude', 'longitude', 'elevation', 'speed','climb_speed'], 'data': None}
 
-files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv']
 
 
 def extractor(folder_name):
+	data = []
+	can_data = [{'label': 'str_angle', 'pid': '025', 'fields': ['timestamp','ssa'], 'data': None},
+		 {'label': 'brk_press', 'pid': '224', 'fields':['timestamp','pbrk'], 'data': None},
+		 {'label': 'accel_ped', 'pid': '245', 'fields':['timestamp','hv_accp'], 'data': None},
+		{'label': 'speed', 'pid': '0B4', 'fields': ['timestamp','sp1'], 'data': None},
+		{'label': 'parking', 'pid': '3BC', 'fields': ['timestamp','b_p'], 'data': None},
+		{'label': 'yaw_rate', 'pid': '024', 'fields': ['timestamp','yr'], 'data': None},
+		{'label': 'road_slope', 'pid': '320', 'fields': ['timestamp','aslp'], 'data': None},
+		{'label': 'brk_state', 'pid': '3BB', 'fields': ['timestamp','b_stpe'], 'data': None},
+		{'label': 'gear_pos', 'pid': '6C0', 'fields': ['timestamp','psw_pmn'], 'data': None},
+		{'label': 'odo', 'pid': '611', 'fields': ['timestamp','odo'], 'data': None}
+		]
+	gps_data = {'label': 'gps_log', 'pid': 'gps', 'fields': ['timestamp', 'gps_timestamp', 'latitude', 'longitude', 'elevation', 'speed','climb_speed'], 'data': None}
+
+	files = ['face_cam',  'hand_cam',  'outside_cam', 'gps_log.txt', 'lane_log.csv', 'obd_log.csv', 'CAN_log.json', 'object_log.csv']
 	global can_data, gps_data, data, files
 	print 'Processing ', os.path.split(os.path.abspath(folder_name))[1]
 	try:
