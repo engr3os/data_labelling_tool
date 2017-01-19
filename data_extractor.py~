@@ -86,8 +86,9 @@ def extractor(folder_name):
 			except:
 				pass
 	for ind, item in enumerate(can_data): 
-		if 'ssa' in item['data'].columns:
-			can_data[ind]['data']['ssa'] = can_data[ind]['data']['ssa'].apply(lambda x: x if x >= 0 else -(3070.5+x))
+		if item['data'] is not None
+			if 'ssa' in item['data'].columns:
+				can_data[ind]['data']['ssa'] = can_data[ind]['data']['ssa'].apply(lambda x: x if x >= 0 else -(3070.5+x))
 		#if 'sp1' in item['data'].columns:
 		#	can_data[ind]['data']['sp1'] = can_data[ind]['data']['sp1']*0.621371 # convert speed from km/h to mph
 	data.extend(can_data)
