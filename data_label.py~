@@ -13,6 +13,8 @@ from glob import glob
 import numpy as np
 import pdb
 from os.path import expanduser
+import peakutils
+import pedalProcessing
 
 """ This script read in the pickle file and display images and make plots 
 """
@@ -129,6 +131,9 @@ else:
 	data = sync(file_name)
 	os.chdir(file_name)
 	
+data = data.resample('100L').ffill()	
+data.dropna(axis=0, how='all',inplace=True)
+
 for item in plot_labels:
 	if not item in data.columns:
 		data[item] = 0
@@ -139,7 +144,8 @@ for item in img_labels:
 		
 img_tstamp = [label+"_timestamp" for label in img_labels]
 data_label = pd.DataFrame(columns=img_tstamp+labels, index=data.index)
-data_label[img_tstamp] = data[img_labels].applymap(lambda x: str(x).split('/')[-1].split('.')[0])	
+data_label[img_tstamp] = data[img_labels].applymap(lambda x: str(x).split('/')[-1].split('.')[0])
+#data_label = data_label.resample('100L').ffill()	
 labels.insert(0, "NA")
 attr.insert(0,["NA"]*(num_class+1))
 pause = False
@@ -176,10 +182,31 @@ button.on_clicked(onClick)
 # steering angle
 #ax2 = plt_fig.add_subplot(3,3,4)
 ax2 = plt.subplot2grid((3,3), (1,0))
-plt_line, = ax2.plot([], [], 'r')
+plt_line, = ax2.plot([], [], 'r', label='Steering angle')
+plt_line12, = ax2.plot([], [], 'r*', label='Left turn')
+plt_line13, = ax2.plot([], [], 'bo', label='Right turn')
+plt_line14, = ax2.plot([], [], 'k-', label='rightlane_curvature')
+plt_line15, = ax2.plot([], [], 'k--', label='leftlane_curvature')
 ax2.set_ylim(min(data['ssa'].min(), 0), data['ssa'].max())
 ax2.set_xlim(0, data.shape[0]-1)
 ax2.set_ylabel('Steering angle')
+plt.legend(handles=[plt_line, plt_line12, plt_line13])
+ssap = data['ssa'].copy()
+ssan = data['ssa'].copy()
+ssap[(ssap<90)] = 0
+ssan[(ssan>-90)] = 0
+ssap[data['sp1']<5] = 0
+ssan[data['sp1']<5] = 0
+ssap[ssap>=90] = ssap[ssap>=90]-90
+ssan[ssan<=-90] = ssan[ssan<=-90]+90
+#pdb.set_trace()
+indexesl = peakutils.indexes(ssap.values.flatten(), thres=0, min_dist=300)
+indexesr = peakutils.indexes(-ssan.values.flatten(), thres=0, min_dist=300)
+tleft = np.array([200 if i in indexesl else np.nan for i in range(ssap.values.shape[0]) ])
+tright = np.array([-200 if i in indexesr else np.nan for i in range(ssan.values.shape[0]) ])
+
+print "Number of left turns: ", len(indexesl)
+print "Number of right turns: ", len(indexesr)
 # speed
 ax3 = plt.subplot2grid((3,3), (1,1))
 #plt_line1, = ax3.plot([], [], 'b', ms=1)
@@ -189,25 +216,60 @@ ax3.set_xlim(0, data.shape[0]-1)
 ax3.set_ylabel('Speed')
 ## Yaw rate
 ax5 = plt.subplot2grid((3,3), (2,0))
-plt_line3, = ax5.plot([], [], 'k', label='Yaw Rate')
-plt_line6, = ax5.plot([], [], 'r', label='Brake Press')
-ax5.set_ylim(min(data[['yr', 'pbrk']].min().min(), 0), data[['yr', 'pbrk']].max().max())
+#plt_line3, = ax5.plot([], [], 'k', label='Yaw Rate')
+#plt_line6, = ax5.plot([], [], 'r', label='Brake Press')
+plt_line8, = ax5.plot([], [], 'b', label='rightlane_offset')
+plt_line9, = ax5.plot([], [], 'r', label='leftlane_offset')
+plt_line10, = ax5.plot([], [], 'bo', label='right lane change')
+plt_line11, = ax5.plot([], [], 'r*', label='left lane change')
+#ax5.set_ylim(min(data[['yr', 'pbrk','rightlane_offset','leftlane_offset']].min().min(), 0), data[['yr', 'pbrk','rightlane_offset','leftlane_offset']].max().max())
+ax5.set_ylim(min(data[['rightlane_offset','leftlane_offset']].min().min(), 0), data[['rightlane_offset','leftlane_offset']].max().max())
 ax5.set_xlim(0, data.shape[0]-1)
-ax5.set_ylabel('Yaw Rate & Break Press')
-plt.legend(handles=[plt_line3, plt_line6])
+ax5.set_ylabel('Left and Right Lane Offset')
+#plt.legend(handles=[plt_line3, plt_line6, plt_line8, plt_line9])
+plt.legend(handles=[plt_line8, plt_line9, plt_line10, plt_line11])
+rightlane = data[['rightlane_offset']].copy().clip(lower=-3.0, upper=0.0).diff().values.flatten()
+leftlane= data[['leftlane_offset']].copy().clip(lower=0.0, upper=3.0).diff().values.flatten()
+leftch = np.nonzero(rightlane > 2.0)[0]+1
+yleft = np.array([2 if i in leftch else np.nan for i in range(leftlane.shape[0]) ])
+rightch = np.nonzero(leftlane < -2.0)[0]+1
+yright = np.array([-2 if i in rightch else np.nan for i in range(leftlane.shape[0]) ])
+
+print "Number of left lane changes: ", len(leftch)
+print "Number of right lane changes: ", len(rightch)
+
 ## Throttle Position
 ax6 = plt.subplot2grid((3,3), (2,1))
-plt_line4, = ax6.plot([], [], 'r', label='Throttle (OBD)')
-plt_line5, = ax6.plot([], [], 'b', label='Throttle (CAN)')
-plt_line2, = ax6.plot([], [], 'g', label= 'Parking')
-throt_diff = data['throttle_position'].max()-data['throttle_position'].min()
-throt_min = data['throttle_position'].min()
-accel_diff = data['hv_accp'].max()-data['hv_accp'].min()
-accel_min = data['hv_accp'].min()
-ax6.set_ylim(0, 1.0)
+plt_line4, = ax6.plot([], [], 'r', label='Brake Pressure')
+plt_line5, = ax6.plot([], [], 'b', label='Accel Pressure')
+plt_line2, = ax6.plot([], [], 'r*', label= 'Braking')
+plt_line6, = ax6.plot([], [], 'bo', label= 'Accel')
+brake = data[['pbrk']].copy()
+brake[brake>0.0001] = 1
+brake[brake<=0.0001] = 0
+brake = np.nonzero(brake.diff().values.flatten()>0)[0]+1
+brake = [brake[i] for i in range(len(brake)-1) if brake[i+1]-brake[i] > 250]
+accel = data[['hv_accp']].copy()
+accel[accel>0.0001] = 1
+accel[accel<=0.0001] = 0
+accel = np.nonzero(accel.diff().values.flatten()>0)[0]+1
+accel = [accel[i] for i in range(len(accel)-1) if accel[i+1]-accel[i] > 100]
+ybrake = np.array([2 if i in brake else np.nan for i in range(data.shape[0]) ])
+yaccel = np.array([2 if i in accel else np.nan for i in range(data.shape[0]) ])
+
+print "Number of braking events: ", len(brake)
+print "Number of accel events: ", len(accel)
+"""ybrake, yaccel = pedalProcessing.processPedalData(data['pbrk'].values.tolist(), data['hv_accp'].values.tolist(),20,0.1,0)
+ybrake = 2*ybrake
+yaccel = 2*yaccel"""
+
+ax6.set_ylim(0, data[['pbrk','hv_accp']].max().max()/10)
 ax6.set_xlim(0, data.shape[0]-1)
-ax6.set_ylabel('Throttle and parking Position')
-plt.legend(handles=[plt_line4, plt_line5, plt_line2])
+ax6.set_ylabel('Brake And Accel. Pressure')
+plt.legend(handles=[plt_line4, plt_line5, plt_line2, plt_line6])
+
+pdb.set_trace()
+
 ## Log and lat
 ax7 = plt.subplot2grid((3,3), (2,2))
 plt_line7, = ax7.plot([], [], 'r')
@@ -264,15 +326,23 @@ def updatefig(itergen):
 		start.set_val(data_label.index[i].value//10**3-int(drange.val)*10**6)
 	global img_files
 	img_files = data.loc[data.index[i],img_labels]
-	plt.suptitle('Processing timestamp '+str((data.index[i].value)//10**3)+', remaining '+str(data.index[-1]-data.index[i]).split()[-1]+'/'+str(data.index[-1]-data.index[0]).split()[-1]+' to complete trip', fontsize=14)
+	plt.suptitle('Processing timestamp '+str((data.index[i]))+', remaining '+str(data.index[-1]-data.index[i]).split()[-1]+'/'+str(data.index[-1]-data.index[0]).split()[-1]+' to complete trip', fontsize=14)
 	plt_image.set_array(combine_imgs(img_files))
 	plt_line.set_data(range(i), data.loc[data.index[:i], 'ssa'].values)
 	plt_line1.set_data(range(i), data.loc[data.index[:i], 'sp1'].values)
-	plt_line2.set_data(range(i), data.loc[data.index[:i], 'b_p'].values)
-	plt_line3.set_data(range(i), data.loc[data.index[:i], 'yr'].values)
-	plt_line4.set_data(range(i), (data.loc[data.index[:i], 'throttle_position'].values-throt_min)/throt_diff)
-	plt_line5.set_data(range(i), (data.loc[data.index[:i], 'hv_accp'].values-accel_min)/accel_diff)
-	plt_line6.set_data(range(i), data.loc[data.index[:i], 'pbrk'].values)
+	#plt_line3.set_data(range(i), data.loc[data.index[:i], 'yr'].values)
+	plt_line4.set_data(range(i), data.loc[data.index[:i], 'pbrk'].values)
+	plt_line5.set_data(range(i), data.loc[data.index[:i], 'hv_accp'].values/10)
+	plt_line8.set_data(range(i), data.loc[data.index[:i], 'rightlane_offset'].values)
+	plt_line9.set_data(range(i), data.loc[data.index[:i], 'leftlane_offset'].values)
+	plt_line2.set_data(range(i), ybrake[:i])
+	plt_line6.set_data(range(i), yaccel[:i])
+	plt_line10.set_data(range(i), yright[:i])
+	plt_line11.set_data(range(i), yleft[:i])
+	plt_line12.set_data(range(i), tleft[:i])
+	plt_line13.set_data(range(i), tright[:i])
+	#plt_line14.set_data(range(i), 50000*data.loc[data.index[:i], 'rightlane_curvature'].values)
+	#plt_line15.set_data(range(i), 50000*data.loc[data.index[:i], 'leftlane_curvature'].values)
 	ax2.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
 	ax3.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
 	ax5.set_xlim(max(0,i-900), min(i+100, data.shape[0]-1))
@@ -292,7 +362,7 @@ def updatefig(itergen):
 	'Label timedelta: '+str(pd.to_timedelta(stop.val-start.val, unit='us')).split()[-1]+'\n'
 	) 
 		
-	return plt_image, plt_line, plt_line1, plt_line2, plt_line3, plt_line4, plt_line5, plt_line6, plt_line7,text, start, stop, data_label, ax2, ax3, ax5, ax6 
+	return plt_image, plt_line, plt_line1, plt_line2, plt_line4, plt_line5, plt_line6, plt_line7, plt_line8, plt_line9,text, start, stop, data_label, ax2, ax3, ax5, ax6 
 plt_fig.canvas.mpl_connect('key_press_event', press)
 #plt_fig.canvas.mpl_connect('button_press_event', onClick)
 plt_ani = an.FuncAnimation(plt_fig, updatefig, itergen, interval = 10, blit=False, repeat=False)
